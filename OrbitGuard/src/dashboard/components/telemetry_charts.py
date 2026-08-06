@@ -238,7 +238,7 @@ def plot_anomaly_distribution(
                 anomalies[time_col] = pd.to_datetime(anomalies[time_col])
             
             # Group by hour
-            anomalies['hour'] = anomalies[time_col].dt.floor('H')
+            anomalies['hour'] = anomalies[time_col].dt.floor('h')
             temporal_counts = anomalies.groupby('hour').size().reset_index(name='count')
             
             fig = go.Figure()
@@ -365,7 +365,7 @@ def plot_sensor_heatmap(
         data[time_col] = pd.to_datetime(data[time_col])
     
     # Create time bins (hourly)
-    data['time_bin'] = data[time_col].dt.floor('H')
+    data['time_bin'] = data[time_col].dt.floor('h')
     
     # Pivot data
     if aggregation == 'mean':

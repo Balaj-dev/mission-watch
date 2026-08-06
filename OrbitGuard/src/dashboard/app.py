@@ -98,7 +98,7 @@ def main():
         st.markdown("### 📁 Data Source")
         data_source = st.text_input(
             "Data path",
-            value="data/processed/synthetic_telemetry.csv",
+            value="data/processed/telemetry_dataset.csv",
             help="Path to telemetry data file"
         )
         

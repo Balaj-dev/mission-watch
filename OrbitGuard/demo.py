@@ -37,7 +37,7 @@ def main():
     parser.add_argument(
         '--data-path',
         type=str,
-        default='data/processed/synthetic_telemetry.csv',
+        default='data/processed/telemetry_dataset.csv',
         help='Path to telemetry data file'
     )
     parser.add_argument(

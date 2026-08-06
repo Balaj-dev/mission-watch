@@ -40,18 +40,22 @@ def render_brief(
         return
     
     # Create container
+    # Generate unique key suffix from title or timestamp
+    key_suffix = f"_{hash(title) if title else hash(brief_text[:100])}"
+    
     if expandable:
         with st.expander("📋 Operational Brief", expanded=True):
-            _render_brief_content(brief_text, title, metadata)
+            _render_brief_content(brief_text, title, metadata, key_suffix)
     else:
         with st.container():
-            _render_brief_content(brief_text, title, metadata)
+            _render_brief_content(brief_text, title, metadata, key_suffix)
 
 
 def _render_brief_content(
     brief_text: str,
     title: Optional[str],
-    metadata: Optional[Dict[str, Any]]
+    metadata: Optional[Dict[str, Any]],
+    key_suffix: str = ""
 ) -> None:
     """Render the content of an operational brief."""
     
@@ -91,11 +95,11 @@ def _render_brief_content(
     col1, col2, col3 = st.columns([1, 1, 2])
     
     with col1:
-        if st.button("📥 Export Brief", key="export_brief_btn"):
+        if st.button("📥 Export Brief", key=f"export_brief_btn{key_suffix}"):
             export_brief(brief_text, format='markdown')
     
     with col2:
-        if st.button("📋 Copy to Clipboard", key="copy_brief_btn"):
+        if st.button("📋 Copy to Clipboard", key=f"copy_brief_btn{key_suffix}"):
             st.code(brief_text, language=None)
             st.success("Brief displayed above - copy manually")
 

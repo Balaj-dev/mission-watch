@@ -28,6 +28,7 @@ def detect_anomalies(
     model_type: str = "isolation_forest",
     train_model_flag: bool = True,
     model_path: Optional[str] = None,
+    return_full_predictions: bool = False,
     **kwargs
 ) -> pd.DataFrame:
     """
@@ -45,10 +46,11 @@ def detect_anomalies(
         model_type: Type of model to use ('isolation_forest', 'zscore', 'iqr', 'ensemble')
         train_model_flag: Whether to train a new model (True) or load existing (False)
         model_path: Path to saved model (required if train_model_flag=False)
+        return_full_predictions: If True, returns tuple (filtered_df, ranked_df) instead of just filtered_df
         **kwargs: Additional parameters for model training/prediction
         
     Returns:
-        DataFrame containing detected anomalies with scores and rankings
+        DataFrame containing detected anomalies with scores and rankings, or tuple if return_full_predictions=True
     """
     logger.info(f"Starting anomaly detection with model_type={model_type}")
     logger.info(f"Input data shape: {telemetry_data.shape}")
@@ -108,6 +110,8 @@ def detect_anomalies(
     num_anomalies = filtered_df['predicted_anomaly'].sum()
     logger.info(f"Detection complete: {num_anomalies:,} anomalies detected")
     
+    if return_full_predictions:
+        return filtered_df, ranked_df
     return filtered_df
 
 
@@ -163,9 +167,10 @@ def run_detection_pipeline(
         
         # Step 3: Detect anomalies
         logger.info("Step 3/4: Detecting anomalies")
-        anomalies_df = detect_anomalies(
+        anomalies_df, full_predictions = detect_anomalies(
             processed_data,
             model_type=model_type,
+            return_full_predictions=True,
             **kwargs
         )
         
@@ -212,7 +217,7 @@ def run_detection_pipeline(
         
         return {
             'anomalies': detected_anomalies,
-            'all_predictions': anomalies_df,
+            'all_predictions': full_predictions,
             'summary': summary,
             'metadata': {
                 'pipeline_start': pipeline_start.isoformat(),

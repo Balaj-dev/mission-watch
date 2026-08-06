@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+"""
+Test script to verify IBM watsonx credentials and Advisor agent functionality.
+
+This script:
+1. Loads environment variables from .env
+2. Tests watsonx connection
+3. Creates a sample anomaly
+4. Generates a real operational brief using Granite LLM
+5. Verifies the output references actual sensor data
+
+Usage:
+    python test_watsonx_advisor.py
+"""
+
+import sys
+import os
+from pathlib import Path
+import pandas as pd
+from dotenv import load_dotenv
+
+# Add project root to path
+sys.path.append(str(Path(__file__).parent))
+
+from src.utils.logger import setup_logger
+from src.agents.advisor.watsonx_client import WatsonxClient
+from src.agents.advisor.advisor import generate_operational_brief
+
+logger = setup_logger(__name__)
+
+
+def test_watsonx_connection():
+    """Test basic watsonx API connection."""
+    print("\n" + "=" * 70)
+    print("TEST 1: watsonx API Connection")
+    print("=" * 70)
+    
+    # Load environment variables
+    load_dotenv()
+    
+    api_key = os.getenv('IBM_CLOUD_API_KEY')
+    project_id = os.getenv('WATSONX_PROJECT_ID')
+    endpoint = os.getenv('WATSONX_ENDPOINT', 'https://us-south.ml.cloud.ibm.com')
+    
+    # Check if credentials are set
+    if not api_key or api_key == 'your_api_key_here':
+        print("\n❌ FAILED: IBM_CLOUD_API_KEY not set in .env file")
+        print("\nPlease follow these steps:")
+        print("1. Copy .env.example to .env")
+        print("2. Add your IBM Cloud API key to .env")
+        print("3. Run this test again")
+        return False
+    
+    if not project_id or project_id == 'your_project_id_here':
+        print("\n❌ FAILED: WATSONX_PROJECT_ID not set in .env file")
+        print("\nPlease add your watsonx project ID to .env")
+        return False
+    
+    print(f"\n✓ API Key: {'*' * 20}{api_key[-4:]}")
+    print(f"✓ Project ID: {project_id[:8]}...{project_id[-4:]}")
+    print(f"✓ Endpoint: {endpoint}")
+    
+    try:
+        # Initialize client
+        print("\n🔄 Initializing watsonx client...")
+        client = WatsonxClient(
+            api_key=api_key,
+            project_id=project_id,
+            endpoint=endpoint
+        )
+        
+        # Test with simple prompt
+        print("🔄 Testing API with simple prompt...")
+        response = client.generate_text(
+            prompt="Say 'Hello from IBM Granite!'",
+            max_tokens=50
+        )
+        
+        print(f"\n✅ SUCCESS: watsonx API connection working!")
+        print(f"\nResponse from Granite LLM:")
+        print(f"  {response[:200]}...")
+        
+        return True
+        
+    except Exception as e:
+        print(f"\n❌ FAILED: {str(e)}")
+        print("\nPossible issues:")
+        print("  - Invalid API key")
+        print("  - Invalid project ID")
+        print("  - Network connectivity issues")
+        print("  - watsonx service not accessible")
+        return False
+
+
+def test_advisor_with_real_anomaly():
+    """Test Advisor agent with a real anomaly."""
+    print("\n" + "=" * 70)
+    print("TEST 2: Advisor Agent with Real Anomaly")
+    print("=" * 70)
+    
+    # Create a realistic test anomaly
+    test_anomaly = pd.DataFrame([{
+        'timestamp': pd.Timestamp('2024-01-15 14:23:45'),
+        'sensor_id': 'P-1',
+        'value': 67.8,
+        'anomaly_score': 0.92,
+        'predicted_anomaly': 1,
+        'subsystem': 'power',
+        'spacecraft': 'SMAP',
+        'anomaly_rank': 1
+    }])
+    
+    print("\n📊 Test Anomaly Details:")
+    print(f"  Sensor ID: {test_anomaly['sensor_id'].iloc[0]}")
+    print(f"  Value: {test_anomaly['value'].iloc[0]}")
+    print(f"  Anomaly Score: {test_anomaly['anomaly_score'].iloc[0]}")
+    print(f"  Subsystem: {test_anomaly['subsystem'].iloc[0]}")
+    print(f"  Spacecraft: {test_anomaly['spacecraft'].iloc[0]}")
+    
+    try:
+        print("\n🔄 Generating operational brief with Granite LLM...")
+        print("   (This may take 10-30 seconds)")
+        
+        brief = generate_operational_brief(
+            test_anomaly,
+            mode='individual'
+        )
+        
+        print("\n✅ SUCCESS: Operational brief generated!")
+        print("\n" + "=" * 70)
+        print("GENERATED OPERATIONAL BRIEF:")
+        print("=" * 70)
+        print(brief)
+        print("=" * 70)
+        
+        # Verify the brief contains actual sensor data
+        sensor_id = test_anomaly['sensor_id'].iloc[0]
+        value = str(test_anomaly['value'].iloc[0])
+        
+        contains_sensor = sensor_id in brief
+        contains_value = value in brief or f"{test_anomaly['value'].iloc[0]:.1f}" in brief
+        
+        print("\n📋 Brief Validation:")
+        print(f"  ✓ Contains sensor ID ({sensor_id}): {contains_sensor}")
+        print(f"  ✓ Contains value ({value}): {contains_value}")
+        print(f"  ✓ Length: {len(brief)} characters")
+        print(f"  ✓ Not mock response: {'MOCK' not in brief.upper()}")
+        
+        if contains_sensor and len(brief) > 100 and 'MOCK' not in brief.upper():
+            print("\n✅ Brief appears to be generated by real Granite LLM!")
+            return True
+        else:
+            print("\n⚠️  Brief may be using mock mode or missing key details")
+            return False
+        
+    except Exception as e:
+        print(f"\n❌ FAILED: {str(e)}")
+        logger.error("Advisor test failed", exc_info=True)
+        return False
+
+
+def main():
+    """Run all tests."""
+    print("=" * 70)
+    print("🛰️  MISSION WATCH - watsonx Advisor Test Suite")
+    print("=" * 70)
+    print("\nThis script will verify your IBM watsonx setup and test")
+    print("the Advisor agent's ability to generate operational briefs.")
+    
+    # Test 1: Connection
+    connection_ok = test_watsonx_connection()
+    
+    if not connection_ok:
+        print("\n" + "=" * 70)
+        print("❌ TEST SUITE FAILED")
+        print("=" * 70)
+        print("\nPlease fix the connection issues and run again.")
+        print("\nFor setup instructions, see: SETUP_INSTRUCTIONS.md")
+        sys.exit(1)
+    
+    # Test 2: Advisor with real anomaly
+    advisor_ok = test_advisor_with_real_anomaly()
+    
+    # Final summary
+    print("\n" + "=" * 70)
+    if connection_ok and advisor_ok:
+        print("✅ ALL TESTS PASSED!")
+        print("=" * 70)
+        print("\nYour IBM watsonx integration is working correctly!")
+        print("\nNext steps:")
+        print("  1. Run the full demo: python demo.py")
+        print("  2. Or launch the dashboard: streamlit run src/dashboard/app.py")
+    else:
+        print("⚠️  SOME TESTS FAILED")
+        print("=" * 70)
+        print("\nThe connection works, but brief generation may need attention.")
+        print("Check the logs for details.")
+    
+    print("\n" + "=" * 70)
+
+
+if __name__ == "__main__":
+    main()
