@@ -18,6 +18,70 @@ from src.utils.helpers import calculate_metrics
 logger = setup_logger(__name__)
 
 
+def validate_telemetry(
+    df: pd.DataFrame,
+    check_schema: bool = True,
+    check_quality: bool = True,
+    generate_report: bool = False
+) -> Dict[str, Any]:
+    """
+    Main validation function for telemetry data.
+    
+    This is the primary entry point for validation that orchestrates
+    schema validation, quality checks, and optional report generation.
+    
+    Args:
+        df: DataFrame to validate
+        check_schema: Whether to validate schema
+        check_quality: Whether to check data quality
+        generate_report: Whether to generate detailed report
+        
+    Returns:
+        Dictionary containing validation results
+    """
+    logger.info(f"Validating telemetry data: {len(df):,} records")
+    
+    results = {
+        'is_valid': True,
+        'errors': [],
+        'warnings': []
+    }
+    
+    # Schema validation
+    if check_schema:
+        is_valid, errors = validate_schema(df)
+        results['schema_valid'] = is_valid
+        if not is_valid:
+            results['is_valid'] = False
+            results['errors'].extend(errors)
+    
+    # Quality checks
+    if check_quality:
+        quality_metrics = check_data_quality(df)
+        results['quality_metrics'] = quality_metrics
+        
+        # Add quality issues as warnings
+        if quality_metrics.get('issues'):
+            results['warnings'].extend(quality_metrics['issues'])
+        
+        # Mark as invalid if quality is poor
+        if quality_metrics.get('quality_score') == 'POOR':
+            results['is_valid'] = False
+            results['errors'].append("Data quality is POOR")
+    
+    # Generate report if requested
+    if generate_report:
+        report = generate_quality_report(df)
+        results['report'] = report
+    
+    if results['is_valid']:
+        logger.info("Telemetry validation passed")
+    else:
+        logger.warning(f"Telemetry validation failed: {len(results['errors'])} errors")
+    
+    return results
+
+
 def validate_schema(
     df: pd.DataFrame,
     required_columns: Optional[List[str]] = None,

@@ -368,6 +368,52 @@ def normalize_features(
     return df_norm, norm_params
 
 
+def preprocess_telemetry(
+    df: pd.DataFrame,
+    clean: bool = True,
+    extract_features_flag: bool = True,
+    normalize: bool = False,
+    handle_missing: str = 'interpolate',
+    window_size: int = 10
+) -> pd.DataFrame:
+    """
+    Main preprocessing pipeline for telemetry data.
+    
+    This is the primary entry point for preprocessing that orchestrates
+    cleaning, feature extraction, and optional normalization.
+    
+    Args:
+        df: Input telemetry DataFrame
+        clean: Whether to clean the data (handle missing values, duplicates)
+        extract_features_flag: Whether to extract features
+        normalize: Whether to normalize features
+        handle_missing: Method to handle missing values
+        window_size: Window size for rolling features
+        
+    Returns:
+        Preprocessed DataFrame ready for anomaly detection
+    """
+    logger.info(f"Starting telemetry preprocessing: {len(df):,} records")
+    
+    df_processed = df.copy()
+    
+    # Step 1: Clean data
+    if clean:
+        df_processed = clean_telemetry(df_processed, handle_missing=handle_missing)
+    
+    # Step 2: Extract features
+    if extract_features_flag:
+        df_processed = extract_features(df_processed, window_size=window_size)
+    
+    # Step 3: Normalize (optional)
+    if normalize:
+        df_processed, _ = normalize_features(df_processed)
+    
+    logger.info(f"Preprocessing complete: {len(df_processed):,} records, {len(df_processed.columns)} features")
+    
+    return df_processed
+
+
 def prepare_for_training(
     df: pd.DataFrame,
     feature_cols: Optional[List[str]] = None,

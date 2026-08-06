@@ -523,3 +523,29 @@ def prioritize_anomalies(
     logger.info(f"Prioritized {len(df_prioritized):,} anomalies")
     
     return df_prioritized
+
+
+# Alias for compatibility (plural version)
+def calculate_anomaly_scores(
+    df: pd.DataFrame,
+    score_col: str = 'anomaly_score',
+    value_col: str = 'value',
+    use_context: bool = True,
+    context_window: int = 10
+) -> pd.DataFrame:
+    """
+    Alias for calculate_anomaly_score (plural version for compatibility).
+    
+    Calculate comprehensive anomaly scores combining multiple factors.
+    
+    Args:
+        df: DataFrame with anomaly predictions
+        score_col: Column containing base anomaly scores
+        value_col: Column containing telemetry values
+        use_context: Whether to incorporate contextual information
+        context_window: Window size for contextual scoring
+        
+    Returns:
+        DataFrame with enhanced anomaly scores
+    """
+    return calculate_anomaly_score(df, score_col, value_col, use_context, context_window)

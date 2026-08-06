@@ -15,7 +15,6 @@ sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
 from src.utils.logger import setup_logger
 from src.utils.config_loader import load_config, get_config_value
-from src.data.loader import load_telemetry_data
 from src.data.preprocessor import preprocess_telemetry
 from src.data.validator import validate_telemetry
 from src.agents.signal_analyst.models import train_model, predict_anomalies
@@ -93,10 +92,9 @@ def detect_anomalies(
     logger.info("Predicting anomalies")
     predictions_df = predict_anomalies(model, telemetry_data, return_scores=True)
     
-    # Calculate additional scores if needed
-    if 'anomaly_score' not in predictions_df.columns:
-        logger.info("Calculating anomaly scores")
-        predictions_df = calculate_anomaly_scores(predictions_df)
+    # Calculate anomaly scores (always, to get final_anomaly_score)
+    logger.info("Calculating anomaly scores")
+    predictions_df = calculate_anomaly_scores(predictions_df)
     
     # Rank anomalies
     logger.info("Ranking anomalies")
@@ -154,6 +152,7 @@ def run_detection_pipeline(
     try:
         # Step 1: Load data
         logger.info("Step 1/4: Loading telemetry data")
+        from src.data.loader import load_telemetry_data
         telemetry_data, metadata = load_telemetry_data(data_source)
         logger.info(f"Loaded {len(telemetry_data):,} records")
         

@@ -18,7 +18,7 @@ from src.utils.config_loader import get_config_value
 logger = setup_logger(__name__)
 
 
-def load_telemetry_data(file_path: str) -> pd.DataFrame:
+def load_telemetry_data(file_path: str) -> tuple[pd.DataFrame, Dict[str, Any]]:
     """
     Load raw telemetry data from CSV/JSON file.
     
@@ -26,7 +26,7 @@ def load_telemetry_data(file_path: str) -> pd.DataFrame:
         file_path: Path to the telemetry data file
         
     Returns:
-        DataFrame containing telemetry data
+        Tuple of (DataFrame containing telemetry data, metadata dictionary)
         
     Raises:
         FileNotFoundError: If file doesn't exist
@@ -53,9 +53,19 @@ def load_telemetry_data(file_path: str) -> pd.DataFrame:
     if 'timestamp' in df.columns:
         df['timestamp'] = pd.to_datetime(df['timestamp'])
     
+    # Create metadata
+    metadata = {
+        'file_path': str(file_path),
+        'file_name': file_path.name,
+        'file_format': file_path.suffix[1:],
+        'num_records': len(df),
+        'num_columns': len(df.columns),
+        'columns': list(df.columns)
+    }
+    
     logger.info(f"Loaded {len(df):,} records from {file_path.name}")
     
-    return df
+    return df, metadata
 
 
 def load_batch(
