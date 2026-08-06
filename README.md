@@ -113,15 +113,14 @@ For development guidelines and conventions, see [AGENTS.md](AGENTS.md).
 
 ## License
 
-[Your License Here]
+MIT License
 
 ## Hackathon
-
-Built for [Hackathon Name] - [Date]
+Built for the AI Builders Challenge with IBM Bob – August Challenge: Advance Space Exploration with AI (August 2026)
 
 ## Contributors
 
-[Your Name/Team]
+Balaj Mubeen
 
 ## Acknowledgments
 
